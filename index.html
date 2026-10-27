@@ -8,15 +8,18 @@
 <meta name="apple-mobile-web-app-title" content="تاي">
 <title>تاي</title>
 <style>
-  :root { --bg:#14111f; --card:#221d33; --me:#6b4eff; --tai:#2d2745; --text:#f3f0ff; --mute:#9a93b8; }
+  :root { --bg:#212121; --card:#2a2a2a; --me:#404040; --tai:#2d2d2d; --text:#ececec; --mute:#9b9b9b; --line:#4a4a4a; --accent:#5f5f5f; --a1:#8a8a8a; --a2:#c8c8c8; }
+  :root[data-theme="pink"] { --bg:#1f1218; --card:#2e1a24; --me:#d6457f; --tai:#3a2230; --text:#fff0f6; --mute:#c49aae; --line:#5a3446; --accent:#d6457f; --a1:#ff6fa5; --a2:#ffb3cf; }
+  :root[data-theme="navy"] { --bg:#0b1220; --card:#121c33; --me:#2a5bd7; --tai:#17243f; --text:#eaf0ff; --mute:#8fa0c4; --line:#27385c; --accent:#2a5bd7; --a1:#2a5bd7; --a2:#6fb1ff; }
+  :root[data-theme="purple"] { --bg:#14111f; --card:#221d33; --me:#6b4eff; --tai:#2d2745; --text:#f3f0ff; --mute:#9a93b8; --line:var(--line); --accent:#6b4eff; --a1:#6b4eff; --a2:#ff7ab8; }
   * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; margin:0; background:var(--bg); color:var(--text);
     font-family:-apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif; }
   #app { display:flex; flex-direction:column; height:100%; max-width:640px; margin:0 auto; }
   header { display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
     background:var(--card); }
-  .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#6b4eff,#ff7ab8);
-    display:grid; place-items:center; font-weight:700; font-size:18px; }
+  .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,var(--a1),var(--a2)) center/cover;
+    display:grid; place-items:center; font-weight:700; font-size:18px; flex:none; }
   header .name { font-weight:700; }
   header .status { font-size:12px; color:var(--mute); }
   header .sp { flex:1; }
@@ -27,31 +30,42 @@
   .tai { align-self:flex-end; background:var(--tai); border-bottom-left-radius:4px; }
   .typing { color:var(--mute); }
   form { display:flex; gap:8px; align-items:flex-end; padding:10px 12px calc(env(safe-area-inset-bottom) + 10px); background:var(--card); }
-  textarea { flex:1; resize:none; max-height:120px; background:var(--bg); color:var(--text); border:1px solid #3a3358;
+  textarea { flex:1; resize:none; max-height:120px; background:var(--bg); color:var(--text); border:1px solid var(--line);
     border-radius:20px; padding:10px 14px; font-size:16px; font-family:inherit; outline:none; }
-  .round { width:44px; height:44px; border-radius:50%; border:none; font-size:20px; color:#fff; background:var(--me); cursor:pointer; flex:none; }
-  .round.mic { background:#3a3358; }
+  .round { width:44px; height:44px; border-radius:50%; border:none; font-size:20px; color:#fff; background:var(--accent); cursor:pointer; flex:none; }
+  .round.mic { background:var(--line); }
   .round.mic.on { background:#e5484d; animation:pulse 1s infinite; }
   @keyframes pulse { 50% { transform:scale(1.1); } }
   dialog { background:var(--card); color:var(--text); border:none; border-radius:18px; padding:18px; width:min(92vw,420px); }
   dialog::backdrop { background:rgba(0,0,0,.6); }
   dialog label { display:block; margin:12px 0 4px; font-size:14px; color:var(--mute); }
-  dialog input, dialog select, dialog textarea.mem { width:100%; background:var(--bg); color:var(--text); border:1px solid #3a3358;
+  dialog input, dialog select, dialog textarea.mem { width:100%; background:var(--bg); color:var(--text); border:1px solid var(--line);
     border-radius:12px; padding:10px; font-size:16px; font-family:inherit; direction:ltr; }
   dialog textarea.mem { direction:rtl; min-height:110px; border-radius:12px; }
   .row { display:flex; gap:8px; margin-top:16px; }
-  .btn { flex:1; padding:12px; border:none; border-radius:12px; font-size:16px; color:#fff; background:var(--me); cursor:pointer; }
-  .btn.alt { background:#3a3358; }
+  .btn { flex:1; padding:12px; border:none; border-radius:12px; font-size:16px; color:#fff; background:var(--accent); cursor:pointer; }
+  .btn.alt { background:var(--line); }
   .check { display:flex; align-items:center; gap:8px; margin-top:12px; }
   .check input { width:auto; }
+  #voice { position:fixed; inset:0; background:var(--bg); z-index:50; display:none; flex-direction:column; align-items:center;
+    justify-content:center; gap:18px; padding:24px; text-align:center; }
+  #voice.show { display:flex; }
+  #vavatar { width:150px; height:150px; border-radius:50%; font-size:60px; }
+  #vavatar.talk { animation:pulse 1.2s infinite; }
+  #vstate { color:var(--mute); font-size:16px; min-height:22px; }
+  #vtext { max-width:520px; max-height:34vh; overflow-y:auto; font-size:18px; line-height:1.7; min-height:30px; }
+  #vbtn { width:84px; height:84px; font-size:34px; }
+  #vclose { background:none; border:1px solid var(--line); color:var(--text); border-radius:20px; padding:10px 24px; font-size:16px; cursor:pointer; }
+  .smallbtn { margin-top:8px; padding:8px 14px; border:1px solid var(--line); background:none; color:var(--text); border-radius:10px; font-size:14px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <div class="avatar">T</div>
+    <div class="avatar" id="avatar">T</div>
     <div><div class="name">تاي</div><div class="status" id="status">متصل</div></div>
     <div class="sp"></div>
+    <button class="ibtn" id="voiceBtn" title="محادثة صوتية">🎧</button>
     <button class="ibtn" id="muteBtn" title="الصوت">🔊</button>
     <button class="ibtn" id="setBtn" title="الإعدادات">⚙️</button>
   </header>
@@ -61,6 +75,14 @@
     <textarea id="input" rows="1" placeholder="اكتبي لتاي..."></textarea>
     <button type="submit" class="round" id="sendBtn">➤</button>
   </form>
+</div>
+
+<div id="voice">
+  <div class="avatar" id="vavatar">T</div>
+  <div id="vstate">اضغطي على الزر وتكلمي</div>
+  <div id="vtext"></div>
+  <button class="round" id="vbtn" type="button">🎤</button>
+  <button id="vclose" type="button">إنهاء المحادثة الصوتية</button>
 </div>
 
 <dialog id="dlg">
@@ -76,6 +98,16 @@
   <input id="modelIn" placeholder="gemini-3.8-flash" autocomplete="off">
   <label>وش يناديك تاي؟</label>
   <input id="nameIn" placeholder="ايلا" style="direction:rtl">
+  <label>لون التطبيق</label>
+  <select id="themeIn">
+    <option value="gray">رصاصي</option>
+    <option value="pink">وردي</option>
+    <option value="navy">أزرق ليلي</option>
+    <option value="purple">بنفسجي</option>
+  </select>
+  <label>صورة تاي (من جوالك)</label>
+  <input id="photoIn" type="file" accept="image/*">
+  <button class="smallbtn" id="photoDel" type="button">حذف الصورة</button>
   <label>ذاكرة تاي عنك (تقدرين تعدلينها)</label>
   <textarea class="mem" id="memIn"></textarea>
   <div class="check"><input type="checkbox" id="speakIn"><span>تاي يرد بصوته</span></div>
@@ -99,11 +131,21 @@ let memory = store.get("tai_memory", "");
 let provider = store.get("tai_provider", "gemini");
 let keys = store.get("tai_keys", {});
 let models = store.get("tai_models", {});
-const getKey = () => keys[provider] || "";
+const getKey = () => (keys[provider] || "").replace(/[^\x21-\x7E]/g, "");
 const getModel = () => models[provider] || DEFAULTS[provider];
 let userName = store.get("tai_name", "ايلا");
 let speakOn = store.get("tai_speak", true);
+let theme = store.get("tai_theme", "gray");
+let photo = store.get("tai_photo", "");
 let busy = false;
+function applyLook() {
+  document.documentElement.dataset.theme = theme;
+  ["avatar", "vavatar"].forEach(id => {
+    const el = $(id);
+    if (photo) { el.style.backgroundImage = "url(" + photo + ")"; el.style.backgroundSize = "cover"; el.style.backgroundPosition = "center"; el.textContent = ""; }
+    else { el.style.backgroundImage = ""; el.textContent = "T"; }
+  });
+}
 
 function bubble(role, text) {
   const d = document.createElement("div");
@@ -132,34 +174,59 @@ function unlockSpeech() { // iOS يحتاج أول صوت يجي من ضغطة
   if (!("speechSynthesis" in window)) return;
   const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u);
 }
-function speak(text) {
-  if (!speakOn || !("speechSynthesis" in window)) return;
+function speak(text, cb, force) {
+  const done = () => { if (cb) { const f = cb; cb = null; f(); } };
+  if ((!speakOn && !force) || !("speechSynthesis" in window)) { done(); return; }
   const clean = text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "").trim();
-  if (!clean) return;
+  if (!clean) { done(); return; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(clean);
   const v = pickVoice(); if (v) u.voice = v;
   u.lang = v ? v.lang : "ar-SA"; u.rate = 0.95; u.pitch = 0.9;
+  u.onend = done; u.onerror = done;
   speechSynthesis.speak(u);
 }
 
-/* ---------- المايك ---------- */
+/* ---------- المايك والمحادثة الصوتية ---------- */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, listening = false;
-$("micBtn").onclick = () => {
+let rec = null, listening = false, voiceMode = false;
+const setVoiceState = t => { $("vstate").textContent = t; };
+function resetMic() { listening = false; $("micBtn").classList.remove("on"); $("status").textContent = "متصل"; }
+function startListen() {
   if (!SR) { alert("المايك ما يشتغل هنا. افتحي الموقع من Safari، أو استخدمي زر المايك اللي في لوحة المفاتيح."); return; }
-  unlockSpeech();
-  if (listening) { rec.stop(); return; }
+  if (listening) return;
+  try { speechSynthesis.cancel(); } catch {}
   rec = new SR(); rec.lang = "ar-SA"; rec.interimResults = true; rec.continuous = false;
-  rec.onstart = () => { listening = true; $("micBtn").classList.add("on"); $("status").textContent = "يسمعك..."; };
-  rec.onresult = e => { $("input").value = Array.from(e.results).map(r => r[0].transcript).join(" "); };
+  rec.onstart = () => { listening = true; $("micBtn").classList.add("on"); $("status").textContent = "يسمعك..."; setVoiceState("يسمعك..."); $("vavatar").classList.remove("talk"); };
+  rec.onresult = e => { const t = Array.from(e.results).map(r => r[0].transcript).join(" "); $("input").value = t; if (voiceMode) $("vtext").textContent = t; };
   rec.onend = () => {
-    listening = false; $("micBtn").classList.remove("on"); $("status").textContent = "متصل";
+    resetMic();
     if ($("input").value.trim()) send();
+    else if (voiceMode) setVoiceState("اضغطي على الزر وتكلمي");
   };
-  rec.onerror = () => { listening = false; $("micBtn").classList.remove("on"); $("status").textContent = "متصل"; };
-  rec.start();
+  rec.onerror = () => { resetMic(); if (voiceMode) setVoiceState("اضغطي على الزر وتكلمي"); };
+  try { rec.start(); } catch { resetMic(); if (voiceMode) setVoiceState("اضغطي على الزر وتكلمي"); }
+}
+$("micBtn").onclick = () => { unlockSpeech(); if (listening && rec) rec.stop(); else startListen(); };
+
+function openVoice() {
+  if (!getKey()) { $("dlg").showModal(); return; }
+  unlockSpeech(); voiceMode = true; $("voice").classList.add("show"); $("vtext").textContent = "";
+  setVoiceState("يسمعك..."); startListen();
+}
+function closeVoice() {
+  voiceMode = false; $("voice").classList.remove("show"); $("vavatar").classList.remove("talk");
+  try { if (listening && rec) rec.stop(); speechSynthesis.cancel(); } catch {}
+}
+$("voiceBtn").onclick = openVoice;
+$("vclose").onclick = closeVoice;
+$("vbtn").onclick = () => {
+  unlockSpeech();
+  if (listening && rec) rec.stop();
+  else if ("speechSynthesis" in window && speechSynthesis.speaking) speechSynthesis.cancel();
+  else startListen();
 };
+function listenAgain() { if (voiceMode && !busy) startListen(); }
 
 /* ---------- العقل ---------- */
 function systemPrompt() {
@@ -192,23 +259,44 @@ async function send() {
   history.push({ role: "user", content: text });
   bubble("user", text);
   busy = true; $("status").textContent = "يكتب...";
+  if (voiceMode) { $("vtext").textContent = text; setVoiceState("يفكر..."); }
   const wait = bubble("assistant", "..."); wait.classList.add("typing");
   try {
     let reply;
     if (provider === "gemini") {
       const contents = history.slice(-30).map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
-      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + getModel() + ":generateContent", {
-        method: "POST",
-        headers: { "content-type": "application/json", "x-goog-api-key": getKey() },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: systemPrompt() }] },
-          contents,
-          generationConfig: { maxOutputTokens: 800 }
-        })
+      const body = JSON.stringify({
+        system_instruction: { parts: [{ text: systemPrompt() }] },
+        contents,
+        generationConfig: { maxOutputTokens: 800 }
       });
-      const data = await r.json();
-      if (!r.ok) throw new Error(data.error && data.error.message || "خطأ " + r.status);
-      const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      const call = async model => {
+        const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-goog-api-key": getKey() },
+          body
+        });
+        let data = {}; try { data = await r.json(); } catch {}
+        return { ok: r.ok, status: r.status, data };
+      };
+      const busyStatus = st => st === 429 || st === 500 || st === 503 || st === 404;
+      let model = getModel(), res = await call(model);
+      for (let i = 0; i < 2 && !res.ok && busyStatus(res.status) && res.status !== 404; i++) {
+        wait.textContent = "لحظة، الشبكة مزحومة..."; 
+        await new Promise(ok => setTimeout(ok, 2500 * (i + 1)));
+        res = await call(model);
+      }
+      if (!res.ok && busyStatus(res.status)) {
+        try {
+          const lr = await fetch("https://generativelanguage.googleapis.com/v1beta/models?pageSize=100", { headers: { "x-goog-api-key": getKey() } });
+          const ld = await lr.json();
+          const alt = (ld.models || []).map(m => ({ name: (m.name || "").replace("models/", ""), ok: (m.supportedGenerationMethods || []).includes("generateContent") }))
+            .filter(m => m.ok && /flash/i.test(m.name) && m.name !== model && !/image|tts|audio|live|embed|thinking|exp/i.test(m.name));
+          if (alt.length) { res = await call(alt[0].name); if (res.ok) { models[provider] = alt[0].name; store.set("tai_models", models); } }
+        } catch {}
+      }
+      if (!res.ok) throw new Error((res.data.error && res.data.error.message) || "خطأ " + res.status);
+      const parts = res.data.candidates && res.data.candidates[0] && res.data.candidates[0].content && res.data.candidates[0].content.parts;
       if (!parts) throw new Error("ما وصل رد (ممكن انحجب). جربي تعيدين الرسالة.");
       reply = parts.map(b => b.text || "").join("").trim();
     } else {
@@ -236,10 +324,15 @@ async function send() {
     history.push({ role: "assistant", content: reply });
     store.set("tai_history", history.slice(-60));
     bubble("assistant", reply);
-    speak(reply);
+    if (voiceMode) {
+      $("vtext").textContent = reply; setVoiceState("يتكلم..."); $("vavatar").classList.add("talk");
+      busy = false;
+      speak(reply, () => { $("vavatar").classList.remove("talk"); listenAgain(); }, true);
+    } else speak(reply);
   } catch (e) {
     history.pop();
     wait.textContent = "صار خطأ: " + e.message; wait.classList.remove("typing");
+    if (voiceMode) { setVoiceState("صار خطأ، اضغطي على الزر وجربي مرة ثانية"); $("vtext").textContent = e.message; }
   } finally { busy = false; $("status").textContent = "متصل"; }
 }
 
@@ -248,22 +341,35 @@ $("form").addEventListener("submit", e => { e.preventDefault(); send(); });
 $("input").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; });
 $("muteBtn").onclick = () => { speakOn = !speakOn; store.set("tai_speak", speakOn); if (!speakOn) speechSynthesis.cancel(); render(); };
 $("setBtn").onclick = () => {
-  $("provIn").value = provider; fillProv();
+  $("provIn").value = provider; fillProv(); $("themeIn").value = theme;
   $("nameIn").value = userName; $("memIn").value = memory; $("speakIn").checked = speakOn;
   $("dlg").showModal();
 };
 $("saveBtn").onclick = () => {
-  provider = $("provIn").value;
+  provider = $("provIn").value; theme = $("themeIn").value; store.set("tai_theme", theme);
   keys[provider] = $("keyIn").value.trim();
   const mv = $("modelIn").value.trim(); if (mv) models[provider] = mv; else delete models[provider];
   store.set("tai_provider", provider); store.set("tai_keys", keys); store.set("tai_models", models);
   userName = $("nameIn").value.trim() || "ايلا";
   memory = $("memIn").value.trim(); speakOn = $("speakIn").checked;
   store.set("tai_name", userName); store.set("tai_memory", memory); store.set("tai_speak", speakOn);
-  $("dlg").close(); render();
+  $("dlg").close(); applyLook(); render();
 };
 $("clearBtn").onclick = () => { if (confirm("تمسحين المحادثة؟ (الذاكرة تبقى)")) { history = []; store.set("tai_history", []); $("dlg").close(); render(); } };
 
+$("photoIn").onchange = e => {
+  const f = e.target.files[0]; if (!f) return;
+  const url = URL.createObjectURL(f), img = new Image();
+  img.onload = () => {
+    const S = 256, c = document.createElement("canvas"); c.width = c.height = S;
+    const m = Math.min(img.width, img.height);
+    c.getContext("2d").drawImage(img, (img.width - m) / 2, (img.height - m) / 2, m, m, 0, 0, S, S);
+    photo = c.toDataURL("image/jpeg", 0.85); store.set("tai_photo", photo); applyLook(); URL.revokeObjectURL(url);
+  };
+  img.onerror = () => alert("ما قدرت أفتح الصورة، جربي صورة ثانية.");
+  img.src = url;
+};
+$("photoDel").onclick = () => { photo = ""; store.set("tai_photo", ""); $("photoIn").value = ""; applyLook(); };
 function fillProv() {
   const p = $("provIn").value;
   $("keyIn").value = keys[p] || ""; $("modelIn").value = models[p] || "";
@@ -271,6 +377,7 @@ function fillProv() {
   $("keyLbl").textContent = p === "gemini" ? "مفتاح Gemini (من Google AI Studio)" : "مفتاح Claude (من console.anthropic.com)";
 }
 $("provIn").onchange = () => { provider = $("provIn").value; fillProv(); };
+applyLook();
 render();
 if (!getKey()) setTimeout(() => $("dlg").showModal(), 400);
 </script>
