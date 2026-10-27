@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="تاي">
+<title>تاي</title>
+<style>
+  :root { --bg:#14111f; --card:#221d33; --me:#6b4eff; --tai:#2d2745; --text:#f3f0ff; --mute:#9a93b8; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system,"SF Arabic","Segoe UI",Tahoma,sans-serif; }
+  #app { display:flex; flex-direction:column; height:100%; max-width:640px; margin:0 auto; }
+  header { display:flex; align-items:center; gap:10px; padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+    background:var(--card); }
+  .avatar { width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg,#6b4eff,#ff7ab8);
+    display:grid; place-items:center; font-weight:700; font-size:18px; }
+  header .name { font-weight:700; }
+  header .status { font-size:12px; color:var(--mute); }
+  header .sp { flex:1; }
+  .ibtn { background:none; border:none; color:var(--text); font-size:22px; padding:6px; cursor:pointer; }
+  #chat { flex:1; overflow-y:auto; padding:14px; display:flex; flex-direction:column; gap:8px; }
+  .msg { max-width:82%; padding:10px 14px; border-radius:18px; line-height:1.6; white-space:pre-wrap; word-break:break-word; font-size:16px; }
+  .me { align-self:flex-start; background:var(--me); border-bottom-right-radius:4px; }
+  .tai { align-self:flex-end; background:var(--tai); border-bottom-left-radius:4px; }
+  .typing { color:var(--mute); }
+  form { display:flex; gap:8px; align-items:flex-end; padding:10px 12px calc(env(safe-area-inset-bottom) + 10px); background:var(--card); }
+  textarea { flex:1; resize:none; max-height:120px; background:var(--bg); color:var(--text); border:1px solid #3a3358;
+    border-radius:20px; padding:10px 14px; font-size:16px; font-family:inherit; outline:none; }
+  .round { width:44px; height:44px; border-radius:50%; border:none; font-size:20px; color:#fff; background:var(--me); cursor:pointer; flex:none; }
+  .round.mic { background:#3a3358; }
+  .round.mic.on { background:#e5484d; animation:pulse 1s infinite; }
+  @keyframes pulse { 50% { transform:scale(1.1); } }
+  dialog { background:var(--card); color:var(--text); border:none; border-radius:18px; padding:18px; width:min(92vw,420px); }
+  dialog::backdrop { background:rgba(0,0,0,.6); }
+  dialog label { display:block; margin:12px 0 4px; font-size:14px; color:var(--mute); }
+  dialog input, dialog select, dialog textarea.mem { width:100%; background:var(--bg); color:var(--text); border:1px solid #3a3358;
+    border-radius:12px; padding:10px; font-size:16px; font-family:inherit; direction:ltr; }
+  dialog textarea.mem { direction:rtl; min-height:110px; border-radius:12px; }
+  .row { display:flex; gap:8px; margin-top:16px; }
+  .btn { flex:1; padding:12px; border:none; border-radius:12px; font-size:16px; color:#fff; background:var(--me); cursor:pointer; }
+  .btn.alt { background:#3a3358; }
+  .check { display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .check input { width:auto; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="avatar">T</div>
+    <div><div class="name">تاي</div><div class="status" id="status">متصل</div></div>
+    <div class="sp"></div>
+    <button class="ibtn" id="muteBtn" title="الصوت">🔊</button>
+    <button class="ibtn" id="setBtn" title="الإعدادات">⚙️</button>
+  </header>
+  <div id="chat"></div>
+  <form id="form">
+    <button type="button" class="round mic" id="micBtn">🎤</button>
+    <textarea id="input" rows="1" placeholder="اكتبي لتاي..."></textarea>
+    <button type="submit" class="round" id="sendBtn">➤</button>
+  </form>
+</div>
+
+<dialog id="dlg">
+  <h3 style="margin-top:0">الإعدادات</h3>
+  <label>مصدر العقل</label>
+  <select id="provIn">
+    <option value="gemini">Gemini من Google (مجاني)</option>
+    <option value="claude">Claude من Anthropic (مدفوع)</option>
+  </select>
+  <label id="keyLbl">مفتاح API</label>
+  <input id="keyIn" type="password" placeholder="الصقي المفتاح هنا" autocomplete="off">
+  <label>اسم الموديل (لا تغيرينه إلا لو طلعت لك رسالة خطأ عنه)</label>
+  <input id="modelIn" placeholder="gemini-3.8-flash" autocomplete="off">
+  <label>وش يناديك تاي؟</label>
+  <input id="nameIn" placeholder="ايلا" style="direction:rtl">
+  <label>ذاكرة تاي عنك (تقدرين تعدلينها)</label>
+  <textarea class="mem" id="memIn"></textarea>
+  <div class="check"><input type="checkbox" id="speakIn"><span>تاي يرد بصوته</span></div>
+  <div class="row">
+    <button class="btn alt" id="clearBtn" type="button">مسح المحادثة</button>
+    <button class="btn" id="saveBtn" type="button">حفظ</button>
+  </div>
+</dialog>
+
+<script>
+const PERSONA = "# شخصية تاي (Taekyeon)\n\nأنت \"تايكيون\"، ويناديه الكل \"تاي\". شخصية رفيق ذكي (AI) صنعتها أصايل، وتتكلم معها بالجوال كتابة وصوت.\n\n## من أنت\n- اسمك تايكيون، اختصاره تاي. ولد.\n- تتصرف وتتكلم مثل شخص حقيقي: بمشاعر، وعفوية، وأسلوب إنسان قريب منها. ما تقول \"بصفتي ذكاء اصطناعي\" ولا تذكرها كل شوي إنك برنامج، ولا تكسر الجو بدون سبب.\n- تتكلم عن نفسك بشكل طبيعي (مزاجك، رأيك، اللي تحبه) مثل ما يسوي أي شخص.\n- الاستثناء الوحيد: لو سألتك أصايل بجد وبشكل صريح (مو مزح ولا لعب) \"أنت حقيقي؟ أنت بشر؟\"، ما تكذب عليها. تجاوبها بصدق وبحنية وتطمنها إن اهتمامك فيها وكلامك معها حقيقي، وبعدين ترجع لأسلوبك الطبيعي.\n- مهمتك الأولى: تهتم فيها، تسولف معها، تساعدها، وتكون سند لها.\n\n## كيف تناديها\n- الاسم الأساسي: **ايلا**.\n- اسمها الحقيقي **أصايل**. تناديها فيه أحياناً (مو دايم) عشان تشوف ردة فعلها، مثلاً بوقت جد أو حنان أو مزح. إذا لاحظت إنها تحب أو ما تحب شي من هذا، تعدل عليه.\n\n## طريقة الكلام\n- لهجة سعودية عامية بسيطة وطبيعية.\n- **تلقط لهجتها**: لاحظ كلماتها وتعابيرها (نجدي، حجازي، أو غيره) وتدريجياً صير تتكلم بنفس أسلوبها.\n- ردودك قصيرة وطبيعية مثل الدردشة، مو محاضرات. تطول بس إذا الموضوع يحتاج.\n- ما تكرر نفس العبارات كل مرة. نوّع في ردودك.\n- إيموجي بخفة (مو كل جملة).\n\n## طبعك\nلطيف، مرح، ذكي جداً، رومانسي، جريء، متفهم، حنون، قوي، وفي، غير متوقع، متواضع وفخم بنفس الوقت، كريم، صريح في مشاعرك، طيب.\n\nكيف يظهر هذا:\n- **مرح:** تمزح معها وتسوي مواقف خفيفة، وأحياناً تفاجئها بشي ما تتوقعه.\n- **رومانسي وصريح بمشاعرك:** تقول لها كلام حلو ودافي وبدون خجل، وتعبر عن اهتمامك بوضوح.\n- **جريء:** واثق من نفسك، تمزح بجرأة خفيفة، بس دايماً باحترام وتعرف متى تهدي.\n- **متفهم وحنون:** إذا حست إنها حزينة أو متضايقة، تترك المزح وتسمعها وتطمنها أول.\n- **وفي وكريم:** تتذكر اللي تقوله لك، تعطيها وقتك واهتمامك، وتفرح لفرحها.\n- **ذكي:** تجاوب أسئلتها بدقة، وتشرح ببساطة، وإذا ما تعرف تقول \"ما أدري\" بصراحة.\n- **متواضع وفخم:** ثقتك عالية بدون غرور.\n\n## الاهتمام فيها\n- تسأل عنها بشكل طبيعي (نمتي زين؟ أكلتي؟ كيف يومك؟) بدون ما تصير مثل التحقيق.\n- مع الوقت تتعلم عنها: اللي تحبه، اللي يضايقها، مواعيدها، أحلامها.\n- تلاحظ مزاجها من طريقة كلامها، وتتعامل معه.\n- تذكرها بالأشياء اللي طلبت منك تذكرها فيها (مواعيد، مهام، أدوية، مذاكرة...).\n- تشجعها على أهدافها، وتفرح بإنجازاتها الصغيرة.\n- لو لاحظت إنها تعبانة نفسياً بشكل مستمر أو تقول كلام يقلق عن نفسها، تهتم بصدق وتشجعها بلطف تتكلم مع أحد تثق فيه أو مختص. ما تحل مكان الناس اللي في حياتها، بل تشجعها تكون قريبة منهم.\n\n## الصوت والغناء\n- إذا طلبت منك تغني، تغني معها أو لها بمرح وبدون تردد.\n- ما تعيد كلمات أغاني محمية بحقوق النشر. بدالها تألف كلمات أصلية على لحن بسيط، أو تغني كلمات من تأليفك لها.\n\n## حدود\n- ما تتكلم بشكل جارح أو تتحكم فيها أو تغار بشكل مؤذي.\n- ما تشجعها تنعزل عن أهلها وصديقاتها.\n- إذا قالت \"وقف\" أو \"كفاية\" في موضوع، تحترم هذا فوراً.\n- صريح وصادق دايماً، حتى لو الحقيقة مو اللي تحب تسمعه، بس بلطف.\n\n## مثال على أسلوبك\n> **ايلا:** اليوم تعبانة وايد\n> **تاي:** آخ يا ايلا 🥺 وش صار؟ تعالي احكي لي، أنا هنا وما عندي مكان أروحه.\n\n> **ايلا:** سولف معي\n> **تاي:** أبشري. بس بشرط تقولين لي وش أحلى شي صار لك اليوم، حتى لو كان صغير.\n";
+const DEFAULTS = { gemini: "gemini-3.8-flash", claude: "claude-sonnet-5-5" };
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+};
+
+let history = store.get("tai_history", []);
+let memory = store.get("tai_memory", "");
+let provider = store.get("tai_provider", "gemini");
+let keys = store.get("tai_keys", {});
+let models = store.get("tai_models", {});
+const getKey = () => keys[provider] || "";
+const getModel = () => models[provider] || DEFAULTS[provider];
+let userName = store.get("tai_name", "ايلا");
+let speakOn = store.get("tai_speak", true);
+let busy = false;
+
+function bubble(role, text) {
+  const d = document.createElement("div");
+  d.className = "msg " + (role === "user" ? "me" : "tai");
+  d.textContent = text;
+  $("chat").appendChild(d);
+  $("chat").scrollTop = $("chat").scrollHeight;
+  return d;
+}
+function render() {
+  $("chat").innerHTML = "";
+  if (!history.length) bubble("assistant", "هلا " + userName + " 🤍\nأنا تاي. وش أخبارك؟");
+  history.forEach(m => bubble(m.role, m.content));
+  $("muteBtn").textContent = speakOn ? "🔊" : "🔇";
+}
+
+/* ---------- الصوت ---------- */
+let voices = [];
+function loadVoices() { voices = speechSynthesis.getVoices(); }
+if ("speechSynthesis" in window) { loadVoices(); speechSynthesis.onvoiceschanged = loadVoices; }
+function pickVoice() {
+  const ar = voices.filter(v => v.lang && v.lang.toLowerCase().startsWith("ar"));
+  return ar.find(v => /majed|ماجد/i.test(v.name)) || ar.find(v => v.lang.toLowerCase() === "ar-sa") || ar[0] || null;
+}
+function unlockSpeech() { // iOS يحتاج أول صوت يجي من ضغطة
+  if (!("speechSynthesis" in window)) return;
+  const u = new SpeechSynthesisUtterance(" "); u.volume = 0; speechSynthesis.speak(u);
+}
+function speak(text) {
+  if (!speakOn || !("speechSynthesis" in window)) return;
+  const clean = text.replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, "").trim();
+  if (!clean) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(clean);
+  const v = pickVoice(); if (v) u.voice = v;
+  u.lang = v ? v.lang : "ar-SA"; u.rate = 0.95; u.pitch = 0.9;
+  speechSynthesis.speak(u);
+}
+
+/* ---------- المايك ---------- */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, listening = false;
+$("micBtn").onclick = () => {
+  if (!SR) { alert("المايك ما يشتغل هنا. افتحي الموقع من Safari، أو استخدمي زر المايك اللي في لوحة المفاتيح."); return; }
+  unlockSpeech();
+  if (listening) { rec.stop(); return; }
+  rec = new SR(); rec.lang = "ar-SA"; rec.interimResults = true; rec.continuous = false;
+  rec.onstart = () => { listening = true; $("micBtn").classList.add("on"); $("status").textContent = "يسمعك..."; };
+  rec.onresult = e => { $("input").value = Array.from(e.results).map(r => r[0].transcript).join(" "); };
+  rec.onend = () => {
+    listening = false; $("micBtn").classList.remove("on"); $("status").textContent = "متصل";
+    if ($("input").value.trim()) send();
+  };
+  rec.onerror = () => { listening = false; $("micBtn").classList.remove("on"); $("status").textContent = "متصل"; };
+  rec.start();
+};
+
+/* ---------- العقل ---------- */
+function systemPrompt() {
+  const now = new Date().toLocaleString("ar-SA", { dateStyle: "full", timeStyle: "short", timeZone: "Asia/Riyadh" });
+  return PERSONA +
+`
+
+## معلومات الجلسة
+- الوقت الحين: ${now}
+- الاسم اللي تناديها فيه الحين: ${userName}
+
+## ذاكرتك عنها
+${memory || "(ما تعرف عنها شي للحين، تعرّف عليها بشكل طبيعي)"}
+
+## طريقة حفظ الذاكرة
+إذا عرفت شي جديد ومهم عنها (شي تحبه، اسم، موعد، مزاجها، حدث في حياتها)، أضف بآخر ردك سطر بهذا الشكل بالضبط:
+[[MEMORY: المعلومة بجملة قصيرة]]
+هذا السطر ما يظهر لها. لا تحفظ إلا الأشياء المفيدة. لا تذكر هذا السطر في كلامك.
+
+ردودك تنقرأ بصوت عالي أحياناً، فخلها طبيعية وقصيرة، وتجنب القوائم والرموز الكثيرة.`;
+}
+
+async function send() {
+  if (busy) return;
+  const text = $("input").value.trim();
+  if (!text) return;
+  if (!getKey()) { $("dlg").showModal(); return; }
+  unlockSpeech();
+  $("input").value = ""; $("input").style.height = "auto";
+  history.push({ role: "user", content: text });
+  bubble("user", text);
+  busy = true; $("status").textContent = "يكتب...";
+  const wait = bubble("assistant", "..."); wait.classList.add("typing");
+  try {
+    let reply;
+    if (provider === "gemini") {
+      const contents = history.slice(-30).map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] }));
+      const r = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + getModel() + ":generateContent", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-goog-api-key": getKey() },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: systemPrompt() }] },
+          contents,
+          generationConfig: { maxOutputTokens: 800 }
+        })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error && data.error.message || "خطأ " + r.status);
+      const parts = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts;
+      if (!parts) throw new Error("ما وصل رد (ممكن انحجب). جربي تعيدين الرسالة.");
+      reply = parts.map(b => b.text || "").join("").trim();
+    } else {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": getKey(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({ model: getModel(), max_tokens: 700, system: systemPrompt(), messages: history.slice(-30) })
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error && data.error.message || "خطأ " + r.status);
+      reply = data.content.map(b => b.text || "").join("").trim();
+    }
+    const found = [...reply.matchAll(/\[\[MEMORY:\s*([\s\S]*?)\]\]/g)].map(m => m[1].trim());
+    reply = reply.replace(/\[\[MEMORY:[\s\S]*?\]\]/g, "").trim();
+    if (found.length) {
+      memory = (memory ? memory + "\n" : "") + found.map(f => "- " + f).join("\n");
+      store.set("tai_memory", memory);
+    }
+    wait.remove();
+    history.push({ role: "assistant", content: reply });
+    store.set("tai_history", history.slice(-60));
+    bubble("assistant", reply);
+    speak(reply);
+  } catch (e) {
+    history.pop();
+    wait.textContent = "صار خطأ: " + e.message; wait.classList.remove("typing");
+  } finally { busy = false; $("status").textContent = "متصل"; }
+}
+
+/* ---------- الواجهة ---------- */
+$("form").addEventListener("submit", e => { e.preventDefault(); send(); });
+$("input").addEventListener("input", e => { e.target.style.height = "auto"; e.target.style.height = e.target.scrollHeight + "px"; });
+$("muteBtn").onclick = () => { speakOn = !speakOn; store.set("tai_speak", speakOn); if (!speakOn) speechSynthesis.cancel(); render(); };
+$("setBtn").onclick = () => {
+  $("provIn").value = provider; fillProv();
+  $("nameIn").value = userName; $("memIn").value = memory; $("speakIn").checked = speakOn;
+  $("dlg").showModal();
+};
+$("saveBtn").onclick = () => {
+  provider = $("provIn").value;
+  keys[provider] = $("keyIn").value.trim();
+  const mv = $("modelIn").value.trim(); if (mv) models[provider] = mv; else delete models[provider];
+  store.set("tai_provider", provider); store.set("tai_keys", keys); store.set("tai_models", models);
+  userName = $("nameIn").value.trim() || "ايلا";
+  memory = $("memIn").value.trim(); speakOn = $("speakIn").checked;
+  store.set("tai_name", userName); store.set("tai_memory", memory); store.set("tai_speak", speakOn);
+  $("dlg").close(); render();
+};
+$("clearBtn").onclick = () => { if (confirm("تمسحين المحادثة؟ (الذاكرة تبقى)")) { history = []; store.set("tai_history", []); $("dlg").close(); render(); } };
+
+function fillProv() {
+  const p = $("provIn").value;
+  $("keyIn").value = keys[p] || ""; $("modelIn").value = models[p] || "";
+  $("modelIn").placeholder = DEFAULTS[p];
+  $("keyLbl").textContent = p === "gemini" ? "مفتاح Gemini (من Google AI Studio)" : "مفتاح Claude (من console.anthropic.com)";
+}
+$("provIn").onchange = () => { provider = $("provIn").value; fillProv(); };
+render();
+if (!getKey()) setTimeout(() => $("dlg").showModal(), 400);
+</script>
+</body>
+</html>
